@@ -40,11 +40,25 @@ def displayStatBar(statsDict: dict, bar_length=20):
             # Print formatted bar
             print(f"{statName}: |{bar}| {value_color}/100")
 
-def passiveUpdate(statsDict: dict):
+def passiveStatUpdate(statsDict: dict):
     statsDict["Happiness"] -= 10
     statsDict["Hunger"] -= 10
     statsDict["Cleanliness"] -= 10
-    statsDict["Age"]
+    statsDict["Age"] = (statsDict["Age"] - time.time()) / 60 # Age in minutes
+
+def actionStatUpdate(dictToChange: dict, happinessChange: int, hungerChange: int, cleanlinessChange: int):
+    dictToChange["Happiness"] += happinessChange
+    dictToChange["Hunger"] += hungerChange
+    dictToChange["Cleanliness"] += cleanlinessChange
+
+    return dictToChange
+    
+
+
+def isAlive(statsDict: dict):
+    if statsDict["Age"] > 3 or statsDict["Happiness"] <= 0 or statsDict["Hunger"] <= 5 or statsDict["Cleanliness"] <= 10:
+        return False
+    return True
 
 rockName = input("Welcome! What would you like to name your rock?\n")
 rockStats = {"Name": rockName, "Alive": True, "Happiness": 100.0, "Hunger": 100.0, "Cleanliness": 100.0, "Age": time.time()}
@@ -60,19 +74,26 @@ while rockStats["Alive"]:
     print("3. Pet")
     print("4. Bathe")
     print("5. Do Nothing")
-    activity = input()
+    activity = int(input())
 
     if activity == 1:
         print(f"You and {rockStats["Name"]} go outside and play fetch! {rockStats["Name"]} didn't really move that much, but it still had fun!")
+        rockStats = actionStatUpdate(rockStats, 40, -20, -20)
+
+
+
     elif activity == 2:
         randomFood = choice(foodChoices)
         print(f"You feed {rockStats["Name"]} a {randomFood}! Despite it not eating the {randomFood}, {rockStats["Name"]} is less hungry!")
+        rockStats = actionStatUpdate(rockStats, 20, 100 - rockStats["Hunger"], -5)
 
     elif activity == 3:
         print(f"{rockStats["Name"]} is now very happy! It did not react to your petting, but {rockStats["Name"]} still enjoyed it a lot!")
+        rockStats = actionStatUpdate(rockStats, 20, -10, -10)
 
     elif activity == 4:
         print(f"You bathe {rockStats["Name"]}. It becomes more clean, but it is very scared of water! Why would you do this to {rockStats["Name"]}?!?!?!")
+        rockStats = actionStatUpdate(rockStats, -20, -5, 100 - rockStats["Cleanliness"])
     
     elif activity == 5:
         print(f"Doing nothing with {rockStats["Name"]}, huh? Do you hate it??? Why did you even adopt it anyway???")
@@ -84,3 +105,8 @@ while rockStats["Alive"]:
         while activity not in answerOptions:
             print(f"{rockStats["Name"]} is confused. What do you want to do again?")
             activity = input("Enter activity: ")
+
+    time.sleep(4)
+
+    passiveStatUpdate(rockStats)
+    rockStats["Alive"] = isAlive(rockStats)
