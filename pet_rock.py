@@ -1,9 +1,8 @@
 from colorama import Fore, Style, init
+import time
+from random import choice
 
-# Initialize colorama (important for Windows compatibility)
-init(autoreset=True)
-
-def display_health_bar(stat_name, value, bar_length=20):
+def displayStatBar(statsDict: dict, bar_length=20):
     """
     Display a colored health bar for any stat in the command line, formatted neatly.
 
@@ -12,35 +11,76 @@ def display_health_bar(stat_name, value, bar_length=20):
         value (int): The current value of the stat, between 0 and 100.
         bar_length (int): The length of the visual bar. Default is 20.
     """
-    # Clamp the value between 0 and 100
-    value = max(0, min(100, value))
+
+    for statName, statValue, in statsDict.items():
+        if isinstance(statValue, float):
+            # Clamp the value between 0 and 100
+            statValue = max(0, min(100, statValue))
+            
+            # Align stat names to the same width
+            statName = statName.ljust(len(max(statsDict.keys(), key=len)))  # Adjusts to fit longest stat name
+
+            # Calculate how many blocks are filled
+            filled_length = int((statValue / 100) * bar_length)
+
+            # Choose color based on value
+            if statValue >= 70:
+                color = Fore.GREEN
+            elif statValue >= 30:
+                color = Fore.YELLOW
+            else:
+                color = Fore.RED
+
+            # Create the bar
+            bar = color + "█" * filled_length + Style.RESET_ALL + "-" * (bar_length - filled_length)
+
+            # Color the numeric value too
+            value_color = color + f"{statValue}" + Style.RESET_ALL
+
+            # Print formatted bar
+            print(f"{statName}: |{bar}| {value_color}/100")
+
+def passiveUpdate(statsDict: dict):
+    statsDict["Happiness"] -= 10
+    statsDict["Hunger"] -= 10
+    statsDict["Cleanliness"] -= 10
+    statsDict["Age"]
+
+rockName = input("Welcome! What would you like to name your rock?\n")
+rockStats = {"Name": rockName, "Alive": True, "Happiness": 100.0, "Hunger": 100.0, "Cleanliness": 100.0, "Age": time.time()}
+foodChoices = ["Apple", "Banana", "Grape", "Pineapple"]
+
+while rockStats["Alive"]:
+    print(f"{rockStats["Name"]}'s Stats: ")
+    displayStatBar(rockStats)
     
-    # Align stat names to the same width
-    stat_name = stat_name.ljust(8)  # Adjust 8 to fit your longest stat name
+    print("What would you like to do with your rock?")
+    print("1. Play")
+    print("2. Feed")
+    print("3. Pet")
+    print("4. Bathe")
+    print("5. Do Nothing")
+    activity = input()
 
-    # Calculate how many blocks are filled
-    filled_length = int((value / 100) * bar_length)
+    if activity == 1:
+        print(f"You and {rockStats["Name"]} go outside and play fetch! {rockStats["Name"]} didn't really move that much, but it still had fun!")
+    elif activity == 2:
+        randomFood = choice(foodChoices)
+        print(f"You feed {rockStats["Name"]} a {randomFood}! Despite it not eating the {randomFood}, {rockStats["Name"]} is less hungry!")
 
-    # Choose color based on value
-    if value >= 70:
-        color = Fore.GREEN
-    elif value >= 30:
-        color = Fore.YELLOW
+    elif activity == 3:
+        print(f"{rockStats["Name"]} is now very happy! It did not react to your petting, but {rockStats["Name"]} still enjoyed it a lot!")
+
+    elif activity == 4:
+        print(f"You bathe {rockStats["Name"]}. It becomes more clean, but it is very scared of water! Why would you do this to {rockStats["Name"]}?!?!?!")
+    
+    elif activity == 5:
+        print(f"Doing nothing with {rockStats["Name"]}, huh? Do you hate it??? Why did you even adopt it anyway???")
+
     else:
-        color = Fore.RED
-
-    # Create the bar
-    bar = color + "█" * filled_length + Style.RESET_ALL + "-" * (bar_length - filled_length)
-
-    # Color the numeric value too
-    value_color = color + f"{value}" + Style.RESET_ALL
-
-    # Print formatted bar
-    print(f"{stat_name}: |{bar}| {value_color}/100")
-
-
-# Example usage
-display_health_bar("Health", 85)
-display_health_bar("Mana", 45)
-display_health_bar("Stamina", 15)
-display_health_bar("Shield", 100)
+        print(f"{rockStats["Name"]} is confused. What do you want to do again?")
+        answerOptions = [range(1, 6)]
+        activity = input("Enter activity: ")
+        while activity not in answerOptions:
+            print(f"{rockStats["Name"]} is confused. What do you want to do again?")
+            activity = input("Enter activity: ")
