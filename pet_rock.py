@@ -4,67 +4,106 @@ from random import choice
 
 def displayStatBar(statsDict: dict, bar_length=20):
     """
-    Display a colored health bar for any stat in the command line, formatted neatly.
-
-    Args:
-        stat_name (str): The name of the stat, e.g., 'Health' or 'Mana'.
-        value (int): The current value of the stat, between 0 and 100.
-        bar_length (int): The length of the visual bar. Default is 20.
+    Display a colored health bar for the main stats (Happiness, Hunger, Cleanliness, Age).
     """
 
-    for statName, statValue, in statsDict.items():
-        if isinstance(statValue, float):
-            # Clamp the value between 0 and 100
-            statValue = max(0, min(100, statValue))
-            
-            # Align stat names to the same width
-            statName = statName.ljust(len(max(statsDict.keys(), key=len)))  # Adjusts to fit longest stat name
+    # Only include stats we want to display
+    displayKeys = ["Happiness", "Hunger", "Cleanliness", "Age"]
 
-            # Calculate how many blocks are filled
-            filled_length = int((statValue / 100) * bar_length)
+    for statName in displayKeys:
+        if statName not in statsDict:
+            continue
 
-            # Choose color based on value
-            if statValue >= 70:
+        statValue = statsDict[statName]
+
+        if isinstance(statValue, (float, int)):
+            # Clamp values
+            statValue = max(0, min(100, statValue)) if statName != "Age" else statValue  
+
+            # Align names
+            statNamePadded = statName.ljust(len(max(displayKeys, key=len)))
+
+            # Calculate filled bar length
+            filled_length = int((statValue / 100) * bar_length) if statName != "Age" else 0
+
+            # Pick color
+            if statName == "Age":
+                color = Fore.CYAN
+            elif statValue >= 70:
                 color = Fore.GREEN
             elif statValue >= 30:
                 color = Fore.YELLOW
             else:
                 color = Fore.RED
 
-            # Create the bar
-            bar = color + "█" * filled_length + Style.RESET_ALL + "-" * (bar_length - filled_length)
+            # Make bar
+            if statName == "Age":
+                # Show age as plain number, no bar
+                print(f"{statNamePadded}: {color}{statValue:.2f} min{Style.RESET_ALL}")
+            else:
+                bar = color + "█" * filled_length + Style.RESET_ALL + "-" * (bar_length - filled_length)
+                value_color = color + f"{statValue:.0f}" + Style.RESET_ALL
+                print(f"{statNamePadded}: |{bar}| {value_color}/100")
 
-            # Color the numeric value too
-            value_color = color + f"{statValue}" + Style.RESET_ALL
-
-            # Print formatted bar
-            print(f"{statName}: |{bar}| {value_color}/100")
 
 def passiveStatUpdate(statsDict: dict):
-    statsDict["Happiness"] -= 10
-    statsDict["Hunger"] -= 10
-    statsDict["Cleanliness"] -= 10
-    statsDict["Age"] = (statsDict["Age"] - time.time()) / 60 # Age in minutes
+    newDict = statsDict.copy()
 
-def actionStatUpdate(dictToChange: dict, happinessChange: int, hungerChange: int, cleanlinessChange: int):
-    dictToChange["Happiness"] += happinessChange
-    dictToChange["Hunger"] += hungerChange
-    dictToChange["Cleanliness"] += cleanlinessChange
+    newDict["Happiness"] -= 10
+    newDict["Hunger"] -= 10
+    newDict["Cleanliness"] -= 10
 
-    return dictToChange
+    return newDict
+
+def actionStatUpdate(statsDict: dict, happinessChange: int, hungerChange: int, cleanlinessChange: int):
+    updatedDict = statsDict.copy()
+
+    updatedDict["Happiness"] += happinessChange
+    updatedDict["Hunger"] += hungerChange
+    updatedDict["Cleanliness"] += cleanlinessChange
+
+    return updatedDict
     
 
+def checkDeath(statsDict: dict):
+    newDict = statsDict.copy()
+    
+    # compute age in minutes
+    age_minutes = (time.time() - newDict["BirthTime"]) / 60
+    newDict["Age"] = age_minutes
 
-def isAlive(statsDict: dict):
-    if statsDict["Age"] > 3 or statsDict["Happiness"] <= 0 or statsDict["Hunger"] <= 5 or statsDict["Cleanliness"] <= 10:
-        return False
-    return True
+    if (
+        age_minutes < ROCK_MAX_AGE
+        and newDict["Happiness"] > 0
+        and newDict["Hunger"] > 5
+        and newDict["Cleanliness"] > 10
+    ):
+        return newDict  # still alive
+
+    # death checks
+    if age_minutes >= ROCK_MAX_AGE:
+        newDict["DeathType"] = "Age"
+    elif newDict["Happiness"] <= 0:
+        newDict["DeathType"] = "Happiness"
+    elif newDict["Hunger"] <= 5:
+        newDict["DeathType"] = "Hunger"
+    elif newDict["Cleanliness"] <= 10:
+        newDict["DeathType"] = "Cleanliness"
+
+    return newDict
+
 
 rockName = input("Welcome! What would you like to name your rock?\n")
-rockStats = {"Name": rockName, "Alive": True, "Happiness": 100.0, "Hunger": 100.0, "Cleanliness": 100.0, "Age": time.time()}
+ROCK_MAX_AGE = 2 # minutes
+rockStats = {"Name": rockName, 
+             "DeathType": None, 
+             "Happiness": 100.0, 
+             "Hunger": 100.0, 
+             "Cleanliness": 100.0, 
+             "BirthTime": time.time()}
 foodChoices = ["Apple", "Banana", "Grape", "Pineapple"]
 
-while rockStats["Alive"]:
+while rockStats["DeathType"] is None:
     print(f"{rockStats["Name"]}'s Stats: ")
     displayStatBar(rockStats)
     
@@ -79,8 +118,6 @@ while rockStats["Alive"]:
     if activity == 1:
         print(f"You and {rockStats["Name"]} go outside and play fetch! {rockStats["Name"]} didn't really move that much, but it still had fun!")
         rockStats = actionStatUpdate(rockStats, 40, -20, -20)
-
-
 
     elif activity == 2:
         randomFood = choice(foodChoices)
@@ -106,7 +143,23 @@ while rockStats["Alive"]:
             print(f"{rockStats["Name"]} is confused. What do you want to do again?")
             activity = input("Enter activity: ")
 
-    time.sleep(4)
+    #time.sleep(4)
 
-    passiveStatUpdate(rockStats)
-    rockStats["Alive"] = isAlive(rockStats)
+    rockStats = passiveStatUpdate(rockStats)
+    rockStats = checkDeath(rockStats)
+
+if rockStats["DeathType"] == "Age":
+    print(f"{rockStats["Name"]} lived to its full potential of {ROCK_MAX_AGE} minutes; Great Job!")
+    print("If you would like to get another, please run the script again")
+
+elif rockStats["DeathType"] == "Happiness":
+    print(f"{rockStats["Name"]} decided that it did not like the life it lived, and decided to die. Shame on you. You should've done more with {rockStats["Name"]}.")
+    print("I would ask you if you want a new pet rock, but you have proved you do not deserve them.")
+
+elif rockStats["DeathType"] == "Hunger":
+    print(f"{rockStats["Name"]} has died of hunger! You are a horrible owner who doesn't know how to simply feed their pet rock. Shame on you.")
+    print("I would ask you if you want a new pet rock, but you have proved you do not deserve them.")
+
+else: #died from cleanliness
+    print(f"Wow. You are a filthy owner. {rockStats["Name"]} died of cleanliness. Shame on you. It doesnt take much effort to feed your rock some food.")
+    print("I would ask you if you want a new pet rock, but you have proved you do not deserve them.")
