@@ -5,6 +5,7 @@ from random import choice
 def displayStatBar(statsDict: dict, bar_length=20):
     """
     Display a colored health bar for the main stats (Happiness, Hunger, Cleanliness, Age).
+    Made by AI
     """
 
     # Only include stats we want to display
@@ -47,6 +48,12 @@ def displayStatBar(statsDict: dict, bar_length=20):
 
 
 def passiveStatUpdate(statsDict: dict):
+    """
+    Passively updates the rock's stats. These will update regardless of the decisions made by the play
+
+    Params:
+    statsDict - Dictionary of the rock's stats
+    """
     newDict = statsDict.copy()
 
     newDict["Happiness"] -= 10
@@ -56,6 +63,16 @@ def passiveStatUpdate(statsDict: dict):
     return newDict
 
 def actionStatUpdate(statsDict: dict, happinessChange: int, hungerChange: int, cleanlinessChange: int):
+    """
+    Updates the rock's stats based on what they chose to do with their rock.
+
+    Params:
+    statsDict - dictionary of rock's stats
+    happinessChange - change to be made to happiness
+    hungerChange - change to be made to hunger
+    cleanlinessChange - change to be made to cleanliness
+    """
+    
     updatedDict = statsDict.copy()
 
     updatedDict["Happiness"] += happinessChange
@@ -66,21 +83,23 @@ def actionStatUpdate(statsDict: dict, happinessChange: int, hungerChange: int, c
     
 
 def checkDeath(statsDict: dict):
+    """
+    Checks if the rock has died, and returns the type of death if it has died
+
+    Params
+    statsDict - dictionary of the rock's stats
+    """
+
     newDict = statsDict.copy()
     
-    # compute age in minutes
+    # Compute age in minutes
     age_minutes = (time.time() - newDict["BirthTime"]) / 60
     newDict["Age"] = age_minutes
 
-    if (
-        age_minutes < ROCK_MAX_AGE
-        and newDict["Happiness"] > 0
-        and newDict["Hunger"] > 5
-        and newDict["Cleanliness"] > 10
-    ):
+    if age_minutes < ROCK_MAX_AGE and newDict["Happiness"] > 0 and newDict["Hunger"] > 5 and newDict["Cleanliness"] > 10:
         return newDict  # still alive
 
-    # death checks
+    # Death type checks
     if age_minutes >= ROCK_MAX_AGE:
         newDict["DeathType"] = "Age"
     elif newDict["Happiness"] <= 0:
@@ -92,7 +111,7 @@ def checkDeath(statsDict: dict):
 
     return newDict
 
-
+# Rock introductions
 rockName = input("Welcome! What would you like to name your rock?\n")
 ROCK_MAX_AGE = 2 # minutes
 rockStats = {"Name": rockName, 
@@ -107,6 +126,7 @@ while rockStats["DeathType"] is None:
     print(f"{rockStats["Name"]}'s Stats: ")
     displayStatBar(rockStats)
     
+    # Rock activity decisions
     print("What would you like to do with your rock?")
     print("1. Play")
     print("2. Feed")
@@ -115,38 +135,41 @@ while rockStats["DeathType"] is None:
     print("5. Do Nothing")
     activity = int(input())
 
+    # Plays fetch
     if activity == 1:
         print(f"You and {rockStats["Name"]} go outside and play fetch! {rockStats["Name"]} didn't really move that much, but it still had fun!")
         rockStats = actionStatUpdate(rockStats, 40, -20, -20)
 
+    # Feeds it
     elif activity == 2:
         randomFood = choice(foodChoices)
         print(f"You feed {rockStats["Name"]} a {randomFood}! Despite it not eating the {randomFood}, {rockStats["Name"]} is less hungry!")
         rockStats = actionStatUpdate(rockStats, 20, 100 - rockStats["Hunger"], -5)
 
+    # Pets it
     elif activity == 3:
         print(f"{rockStats["Name"]} is now very happy! It did not react to your petting, but {rockStats["Name"]} still enjoyed it a lot!")
         rockStats = actionStatUpdate(rockStats, 20, -10, -10)
 
+    # Bathes it
     elif activity == 4:
         print(f"You bathe {rockStats["Name"]}. It becomes more clean, but it is very scared of water! Why would you do this to {rockStats["Name"]}?!?!?!")
         rockStats = actionStatUpdate(rockStats, -20, -5, 100 - rockStats["Cleanliness"])
     
+    # Does nothing
     elif activity == 5:
         print(f"Doing nothing with {rockStats["Name"]}, huh? Do you hate it??? Why did you even adopt it anyway???")
 
     else:
-        print(f"{rockStats["Name"]} is confused. What do you want to do again?")
-        answerOptions = [range(1, 6)]
-        activity = input("Enter activity: ")
-        while activity not in answerOptions:
-            print(f"{rockStats["Name"]} is confused. What do you want to do again?")
-            activity = input("Enter activity: ")
+        print(f"{rockStats["Name"]} is confused. Because of this inadequate input, you do nothing with it.")
 
-    #time.sleep(4)
+    #time.sleep(3)
 
     rockStats = passiveStatUpdate(rockStats)
     rockStats = checkDeath(rockStats)
+
+print(f"{rockStats["Name"]}'s Stats: ")
+displayStatBar(rockStats)
 
 if rockStats["DeathType"] == "Age":
     print(f"{rockStats["Name"]} lived to its full potential of {ROCK_MAX_AGE} minutes; Great Job!")
@@ -161,5 +184,5 @@ elif rockStats["DeathType"] == "Hunger":
     print("I would ask you if you want a new pet rock, but you have proved you do not deserve them.")
 
 else: #died from cleanliness
-    print(f"Wow. You are a filthy owner. {rockStats["Name"]} died of cleanliness. Shame on you. It doesnt take much effort to feed your rock some food.")
+    print(f"Wow. You are a filthy owner. {rockStats["Name"]} died of cleanliness. Shame on you. It doesn't take much effort to feed your rock some food.")
     print("I would ask you if you want a new pet rock, but you have proved you do not deserve them.")
