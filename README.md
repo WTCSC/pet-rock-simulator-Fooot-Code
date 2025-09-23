@@ -17,3 +17,17 @@ This is a pet rock simulator, where you can own your own pet rock!!! Just make s
 
 ## Flowchart of Decisions
 ![](documentation_images/petRockFlowChart.png)
+
+## Possible Outcomes
+ - Age Death:
+    - Your rock reaches its full lifespan of ROCK_MAX_AGE minutes.
+    - Congratulations! You provided good care and let your rock live its full potential.
+ - Happiness Death:
+    - Your rock’s happiness drops to zero.
+    - This happens if you neglect playing or petting it. Your rock “decides” it is not enjoying life — a sad ending.
+ - Hunger Death:
+    - Your rock’s hunger falls below 5.
+    - Forgetting to feed your rock will lead to this tragic outcome. Your rock didn’t get the nourishment it needed.
+ - Cleanliness Death:
+    - Your rock’s cleanliness drops below 10.
+    - Failing to bathe your rock (or making poor hygiene decisions) results in this grim fate.
